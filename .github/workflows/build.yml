@@ -29,16 +29,16 @@ jobs:
           npx expo install --fix
           npx expo prebuild --platform android --clean
 
-      - name: Build Debug APK
+      - name: Build Standalone Release APK
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dorg.gradle.daemon=false"
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew :app:assembleDebug --no-daemon
+          ./gradlew :app:assembleRelease --no-daemon
 
-      - name: Upload APK
+      - name: Upload Standalone APK
         uses: actions/upload-artifact@v4
         with:
-          name: ASMO-Studio-App
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: ASMO-Studio-App-Release
+          path: android/app/build/outputs/apk/release/*.apk
