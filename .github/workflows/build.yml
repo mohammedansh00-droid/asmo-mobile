@@ -26,6 +26,7 @@ jobs:
       - name: Install & Synchronize Dependencies
         run: |
           npm install
+          npx expo install expo-asset expo-font
           npx expo install --fix
           npx expo prebuild --platform android --clean
 
