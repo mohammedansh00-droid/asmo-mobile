@@ -23,10 +23,21 @@ jobs:
           distribution: 'zulu'
           java-version: 17
 
-      - name: Install & Synchronize Dependencies
+      - name: Configure Babel & Dependencies
         run: |
+          # 1. Automatically create babel.config.js so Babel knows how to read JSX
+          cat << 'EOF' > babel.config.js
+          module.exports = function(api) {
+            api.cache(true);
+            return {
+              presets: ['babel-preset-expo'],
+            };
+          };
+          EOF
+
+          # 2. Install dependencies & Babel preset
           npm install
-          npx expo install expo-asset expo-font
+          npx expo install expo-asset expo-font babel-preset-expo
           npx expo install --fix
           npx expo prebuild --platform android --clean
 
