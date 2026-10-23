@@ -65,7 +65,7 @@ export default function App() {
         </TouchableOpacity>
       </View>
 
-      {/* Main Workspace */}
+      {/* Main Content Area */}
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* 1. CLIPS TAB */}
         {activeTab === 'clips' && (
@@ -548,3 +548,46 @@ const styles = StyleSheet.create({
   },
   clipRank: {
     color: '#a855f7',
+    fontWeight: '800',
+    fontSize: 14,
+  },
+  clipTitle: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  clipPlat: {
+    color: '#71717a',
+    fontSize: 10,
+  },
+  clipViews: {
+    color: '#10b981',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  bottomNav: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 60,
+    backgroundColor: '#0a0514',
+    borderTopWidth: 1,
+    borderTopColor: '#1a1329',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  navItem: {
+    alignItems: 'center',
+    gap: 3,
+  },
+  navText: {
+    color: '#71717a',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  navTextActive: {
+    color: '#a855f7',
+  },
+});
