@@ -13,38 +13,100 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
+// Optional: Paste your OpenAI API Key here, or leave as '' for built-in simulation mode
+const OPENAI_API_KEY = '';
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('clips');
   const [sourceUrl, setSourceUrl] = useState('');
   const [selectedDuration, setSelectedDuration] = useState('30-60s');
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState(0);
+  const [aiOutput, setAiOutput] = useState(null);
 
   const [platforms, setPlatforms] = useState({
     youtube: true,
     tiktok: true,
-    instagram: false,
+    instagram: true,
   });
 
   const togglePlatform = (key) => {
     setPlatforms((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const startAnalysis = () => {
+  const startAnalysis = async () => {
     if (!sourceUrl.trim()) {
-      Alert.alert('Missing URL', 'Please paste a valid YouTube or Twitch stream link.');
+      Alert.alert('Missing URL', 'Please paste a valid YouTube or Twitch video link first.');
       return;
     }
+
     setIsProcessing(true);
     setProcessingStep(1);
 
-    setTimeout(() => setProcessingStep(2), 2000);
-    setTimeout(() => setProcessingStep(3), 4200);
-    setTimeout(() => {
+    // If no OpenAI key is set, run the built-in generator
+    if (!OPENAI_API_KEY || OPENAI_API_KEY.trim() === '') {
+      setTimeout(() => setProcessingStep(2), 1500);
+      setTimeout(() => setProcessingStep(3), 3200);
+      setTimeout(() => {
+        setProcessingStep(4);
+        setIsProcessing(false);
+        setAiOutput({
+          hook: "WATCH TILL THE END! You won't believe this clutch play... 🔥",
+          virality_score: 96,
+          youtube_title: "INSANE 1v5 CLUTCH ESCAPE! 🏆 #Shorts",
+          tiktok_caption: "He actually pulled this off?! 😱 Drop a sub if you loved this play! #gaming #streamer #highlights #clutch #viral",
+          instagram_caption: "Epic gaming moments with @asmowarlord. Tag a teammate who needs to see this! ⚔️🔥 #asmogaming #reels"
+        });
+        Alert.alert('ASMO AI Ready!', 'Viral clip package generated successfully with 96/100 Virality Score.');
+      }, 5000);
+      return;
+    }
+
+    // If key is set, call live OpenAI API
+    try {
+      setTimeout(() => setProcessingStep(2), 1200);
+      setTimeout(() => setProcessingStep(3), 2800);
+
+      const prompt = `You are ASMO AI, the elite short-form video editor for the gaming channel @asmowarlord (Asmogaming).
+The user wants to extract the top viral 9:16 Short/Reel from this source: "${sourceUrl}" (Target length: ${selectedDuration}).
+Respond strictly in valid JSON adhering to this schema:
+{
+  "hook": "Punchy 3-second opening hook",
+  "virality_score": 95,
+  "youtube_title": "Shorts title with emoji and #Shorts",
+  "tiktok_caption": "TikTok caption with trending hashtags",
+  "instagram_caption": "Instagram Reel caption formatted for @asmowarlord"
+}`;
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + OPENAI_API_KEY.trim(),
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'system', content: 'You respond strictly with JSON.' },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.7,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.error) throw new Error(data.error.message);
+
+      const parsed = JSON.parse(data.choices[0].message.content);
+      setAiOutput(parsed);
       setProcessingStep(4);
+      Alert.alert('ASMO AI Ready!', `Generated package with Virality Score: ${parsed.virality_score}/100.`);
+    } catch (err) {
+      Alert.alert('AI Error', err.message || 'Failed to call OpenAI API.');
+    } finally {
       setIsProcessing(false);
-      Alert.alert('Analysis Complete', '3 viral 9:16 Shorts extracted & ready to publish.');
-    }, 6500);
+    }
   };
 
   return (
@@ -61,11 +123,11 @@ export default function App() {
           <Text style={styles.brandTitle}>ASMO AI STUDIO</Text>
         </View>
         <TouchableOpacity style={styles.profileBtn}>
-          <Text style={styles.profileText}>PRO</Text>
+          <Text style={styles.profileText}>WARLORD</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Main Content Area */}
+      {/* Main Workspace */}
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* 1. CLIPS TAB */}
         {activeTab === 'clips' && (
@@ -156,13 +218,47 @@ export default function App() {
               </View>
             )}
 
+            {/* AI Results Output Box */}
+            {aiOutput && (
+              <View style={[styles.card, { marginTop: 16, borderColor: '#a855f7' }]}>
+                <View style={styles.scoreRow}>
+                  <Text style={styles.hookLabel}>OPENING HOOK (0:00 - 0:03)</Text>
+                  <View style={styles.scoreBadge}>
+                    <Text style={styles.scoreBadgeText}>SCORE: {aiOutput.virality_score}/100</Text>
+                  </View>
+                </View>
+                <Text style={styles.hookText}>"{aiOutput.hook}"</Text>
+
+                <View style={styles.divider} />
+
+                <Text style={styles.platformHeader}>YOUTUBE SHORTS TITLE</Text>
+                <Text style={styles.platformValue}>{aiOutput.youtube_title}</Text>
+
+                <Text style={[styles.platformHeader, { marginTop: 10 }]}>TIKTOK CAPTION (@asmowarlord)</Text>
+                <Text style={styles.platformValue}>{aiOutput.tiktok_caption}</Text>
+
+                <Text style={[styles.platformHeader, { marginTop: 10 }]}>INSTAGRAM REELS (Asmogaming)</Text>
+                <Text style={styles.platformValue}>{aiOutput.instagram_caption}</Text>
+
+                <TouchableOpacity
+                  style={[styles.primaryBtn, { marginTop: 16, backgroundColor: '#06b6d4' }]}
+                  onPress={() => {
+                    setActiveTab('schedule');
+                    Alert.alert('Transferred', 'AI metadata transferred to your Publishing Queue!');
+                  }}>
+                  <Ionicons name="send" size={16} color="#ffffff" />
+                  <Text style={styles.primaryBtnText}>Transfer to Publishing Queue</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
             {/* 9:16 Video Preview Frame */}
             <View style={styles.previewContainer}>
               <View style={styles.phoneMock}>
                 <Ionicons name="videocam" size={44} color="#71717a" />
                 <Text style={styles.phoneMockText}>Smart 9:16 Reframer</Text>
-                <Text style={styles.phoneMockSub}>Subtitles & Blur Margin Active</Text>
-                {processingStep === 4 && (
+                <Text style={styles.phoneMockSub}>Subtitles & Blurred Padding Active</Text>
+                {aiOutput && (
                   <View style={styles.readyBadge}>
                     <Text style={styles.readyBadgeText}>✓ Ready to Broadcast</Text>
                   </View>
@@ -181,12 +277,12 @@ export default function App() {
             </Text>
 
             <View style={styles.card}>
-              <Text style={styles.inputLabel}>CONNECTED ACCOUNTS</Text>
+              <Text style={styles.inputLabel}>CONNECTED DESTINATIONS</Text>
               <View style={styles.targetGrid}>
                 {[
                   { id: 'youtube', name: 'YouTube Shorts', icon: 'logo-youtube' },
-                  { id: 'tiktok', name: 'TikTok', icon: 'musical-notes' },
-                  { id: 'instagram', name: 'Instagram Reels', icon: 'logo-instagram' },
+                  { id: 'tiktok', name: 'TikTok (@asmowarlord)', icon: 'musical-notes' },
+                  { id: 'instagram', name: 'Insta & FB (@asmowarlord)', icon: 'logo-instagram' },
                 ].map((item) => {
                   const active = platforms[item.id];
                   return (
@@ -207,17 +303,17 @@ export default function App() {
                 })}
               </View>
 
-              <Text style={[styles.inputLabel, { marginTop: 16 }]}>UNIVERSAL TITLE</Text>
+              <Text style={[styles.inputLabel, { marginTop: 16 }]}>QUEUED TITLE</Text>
               <TextInput
                 style={styles.textInput}
-                defaultValue="UNBELIEVABLE 1v5 CLUTCH! 🏆"
+                defaultValue={aiOutput ? aiOutput.youtube_title : 'UNBELIEVABLE 1v5 CLUTCH! 🏆'}
               />
 
               <TouchableOpacity
                 style={[styles.primaryBtn, { marginTop: 20 }]}
-                onPress={() => Alert.alert('Queued', 'Post dispatched to publishing queue.')}>
+                onPress={() => Alert.alert('Dispatched!', 'Dispatched to YouTube Shorts, TikTok, and Instagram Reels queues.')}>
                 <Ionicons name="send" size={16} color="#ffffff" />
-                <Text style={styles.primaryBtnText}>Publish to Selected</Text>
+                <Text style={styles.primaryBtnText}>Publish to Selected Accounts</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -227,7 +323,7 @@ export default function App() {
         {activeTab === 'analytics' && (
           <View>
             <Text style={styles.sectionTitle}>Studio Analytics</Text>
-            <Text style={styles.sectionSubtitle}>Aggregated cross-platform metrics.</Text>
+            <Text style={styles.sectionSubtitle}>Connected metrics for Asmogaming.</Text>
 
             <View style={styles.statsGrid}>
               <View style={styles.statCard}>
@@ -431,6 +527,53 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontWeight: '700',
     fontSize: 14,
+  },
+  scoreRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  scoreBadge: {
+    backgroundColor: 'rgba(168, 85, 247, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  scoreBadgeText: {
+    color: '#a855f7',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  hookLabel: {
+    color: '#06b6d4',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  hookText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '700',
+    fontStyle: 'italic',
+    marginVertical: 4,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#211636',
+    marginVertical: 12,
+  },
+  platformHeader: {
+    color: '#a1a1aa',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  platformValue: {
+    color: '#ffffff',
+    fontSize: 13,
+    marginTop: 2,
+    fontWeight: '500',
   },
   stepRow: {
     flexDirection: 'row',
